@@ -12,7 +12,7 @@
                     employeeData="this.employeeData"
                     reasons="this.reasons"
                     pin_code="this.pin_code"
-                    onReasonConfirm="(employee_id, pin_code) => this.onReasonSelection(employee_id, pin_code)"
+                    onReasonConfirm="(employee_id, pin_code, attendance_reason_id) => this.onReasonSelection(employee_id, pin_code, attendance_reason_id)"
                     onClickBack="() => this.kioskReturn()"
                 />
             <input t-ref="attendance_reason" type="hidden" />

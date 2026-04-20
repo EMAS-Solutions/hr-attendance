@@ -1,7 +1,8 @@
 /** @odoo-module */
 
 import {ActivityMenu} from "@hr_attendance/components/attendance_menu/attendance_menu";
-import {_lt} from "@web/core/l10n/translation";
+import {_t} from "@web/core/l10n/translation";
+import {isIosApp} from "@web/core/browser/feature_detection";
 import {patch} from "@web/core/utils/patch";
 import {useRef} from "@odoo/owl";
 import {useService} from "@web/core/utils/hooks";
@@ -27,8 +28,7 @@ patch(ActivityMenu.prototype, {
         return this.reasons;
     },
     async signInOut() {
-        // Check if the reasons are required
-        // and the employee has to select a reason
+        let attendance_reason_param = "";
         if (this.employee.show_reason_on_attendance_screen) {
             const attendance_reason_id = this.attendance_reason.el
                 ? this.attendance_reason.el.value
@@ -37,13 +37,44 @@ patch(ActivityMenu.prototype, {
                 this.employee.required_reason_on_attendance_screen &&
                 attendance_reason_id === "0"
             ) {
-                this.notification.add(_lt("An attendance reason is required!"), {
-                    title: _lt("Please, select a reason!"),
+                this.notification.add(_t("An attendance reason is required!"), {
+                    title: _t("Please, select a reason!"),
                     type: "danger",
                 });
                 return false;
             }
+            attendance_reason_param =
+                attendance_reason_id === "0" ? "" : attendance_reason_id;
         }
-        return super.signInOut();
+        // Fully override super method: the base implementation calls
+        // `this.rpc(...)` directly, so we cannot let it proceed without our
+        // extra `attendance_reason_id` param. Mirror the base flow here.
+        document.body.click();
+        if (!isIosApp()) {
+            navigator.geolocation.getCurrentPosition(
+                async ({coords: {latitude, longitude}}) => {
+                    await this.rpc("/hr_attendance/systray_check_in_out", {
+                        latitude,
+                        longitude,
+                        attendance_reason_id: attendance_reason_param,
+                    });
+                    await this.searchReadEmployee();
+                },
+                async () => {
+                    await this.rpc("/hr_attendance/systray_check_in_out", {
+                        attendance_reason_id: attendance_reason_param,
+                    });
+                    await this.searchReadEmployee();
+                },
+                {
+                    enableHighAccuracy: true,
+                }
+            );
+        } else {
+            await this.rpc("/hr_attendance/systray_check_in_out", {
+                attendance_reason_id: attendance_reason_param,
+            });
+            await this.searchReadEmployee();
+        }
     },
 });

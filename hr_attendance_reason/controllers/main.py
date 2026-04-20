@@ -18,16 +18,35 @@ class HrAttendance(HrAttendance):
     def systray_attendance(self, latitude=False, longitude=False):
         if request.params.get("attendance_reason_id"):
             request.update_context(
-                attendance_reason_id=request.params.get("attendance_reason_id")
+                attendance_reason_id=int(request.params.get("attendance_reason_id"))
             )
         return super().systray_attendance(latitude=latitude, longitude=longitude)
 
-    def manual_selection(self, token, employee_id, pin_code):
+    def manual_selection(self, token, employee_id, pin_code, **kw):
+        # Kept for backwards compatibility; the live route is
+        # `manual_selection_with_geolocation` (see below).
         if request.params.get("attendance_reason_id"):
             request.update_context(
-                attendance_reason_id=request.params.get("attendance_reason_id")
+                attendance_reason_id=int(request.params.get("attendance_reason_id"))
             )
-        return super().manual_selection(token, employee_id, pin_code)
+        return super().manual_selection(token, employee_id, pin_code, **kw)
+
+    @route("/hr_attendance/manual_selection", type="json", auth="public")
+    def manual_selection_with_geolocation(
+        self, token, employee_id, pin_code, latitude=False, longitude=False, **kw
+    ):
+        if request.params.get("attendance_reason_id"):
+            request.update_context(
+                attendance_reason_id=int(request.params.get("attendance_reason_id"))
+            )
+        return super().manual_selection_with_geolocation(
+            token,
+            employee_id,
+            pin_code,
+            latitude=latitude,
+            longitude=longitude,
+            **kw,
+        )
 
     # new routes
     @route("/hr_attendance_reason/get_reasons", type="json", auth="public")
