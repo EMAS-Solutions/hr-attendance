@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
 
 <t
@@ -22,11 +22,13 @@
                     <option
                             t-att-value="reason.id"
                             t-esc="reason.name"
+                            t-att-selected="reason.id === this.defaultReasonId"
                             t-if="reason.action_type === 'sign_in' and !this.state.checkedIn"
                         />
                     <option
                             t-att-value="reason.id"
                             t-esc="reason.name"
+                            t-att-selected="reason.id === this.defaultReasonId"
                             t-if="reason.action_type === 'sign_out' and this.state.checkedIn"
                         />
                 </t>

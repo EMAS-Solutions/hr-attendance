@@ -1,19 +1,28 @@
 /** @odoo-module */
 
-import {ActivityMenu} from "@hr_attendance/components/attendance_menu/attendance_menu";
-import {_t} from "@web/core/l10n/translation";
-import {isIosApp} from "@web/core/browser/feature_detection";
-import {patch} from "@web/core/utils/patch";
-import {useRef} from "@odoo/owl";
-import {useService} from "@web/core/utils/hooks";
+import { ActivityMenu } from "@hr_attendance/components/attendance_menu/attendance_menu";
+import { _t } from "@web/core/l10n/translation";
+import { isIosApp } from "@web/core/browser/feature_detection";
+import { patch } from "@web/core/utils/patch";
+import { useRef, useState, onWillStart } from "@odoo/owl";
+import { useService } from "@web/core/utils/hooks";
 
 patch(ActivityMenu.prototype, {
     setup() {
         super.setup();
         this.orm = useService("orm");
         this.notification = useService("notification");
-        this.reasons = this.getAttendanceReasons();
         this.attendance_reason = useRef("attendance_reason");
+        this.state = useState({ ...this.state, loading: true });
+
+        onWillStart(async () => {
+            this.reasons = await this.getAttendanceReasons();
+            this.state.loading = false;
+        });
+    },
+    get defaultReasonId() {
+        const action = this.state.checkedIn ? "sign_out" : "sign_in";
+        return this.reasons?.find((r) => r.action_type === action)?.id;
     },
     async getAttendanceReasons() {
         this.reasons = [];
@@ -52,7 +61,7 @@ patch(ActivityMenu.prototype, {
         document.body.click();
         if (!isIosApp()) {
             navigator.geolocation.getCurrentPosition(
-                async ({coords: {latitude, longitude}}) => {
+                async ({ coords: { latitude, longitude } }) => {
                     await this.rpc("/hr_attendance/systray_check_in_out", {
                         latitude,
                         longitude,
